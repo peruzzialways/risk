@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+coverage
+.vercel
+.DS_Store
+*.local
+.env*.local
+.claude/settings.local.json
