@@ -194,16 +194,6 @@ export default function App() {
     }
   };
 
-  const loadSample = async () => {
-    try {
-      const rows = await quotesApi.loadSample();
-      setQuotes(rows);
-      setSaveError(false);
-    } catch {
-      setSaveError(true);
-    }
-  };
-
   const clearAll = async () => {
     setConfirmClear(false);
     const prevQuotes = quotes;
@@ -432,14 +422,11 @@ export default function App() {
                 The register is empty
               </div>
               <p className="text-sm mt-1" style={{ color: C.inkSoft }}>
-                Log the unit's first quotation, or load sample data to explore the dashboard.
+                Log the unit's first quotation to get started.
               </p>
               <div className="mt-5 flex justify-center gap-3">
                 <button onClick={openAdd} className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ background: C.ink }}>
                   + Log new quote
-                </button>
-                <button onClick={loadSample} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ border: `1px solid ${C.line}`, color: C.ink }}>
-                  Load sample data
                 </button>
               </div>
             </div>

@@ -26,6 +26,5 @@ export const quotesApi = {
   update: (id, patch) =>
     fetch(`/api/quotes/${id}`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(patch) }).then(handle),
   remove: (id) => fetch(`/api/quotes/${id}`, { method: "DELETE" }).then(handle),
-  loadSample: () => fetch("/api/quotes/sample", { method: "POST" }).then(handle),
   clearAll: () => fetch("/api/quotes", { method: "DELETE" }).then(handle),
 };

@@ -45,12 +45,6 @@ describe("quotesApi", () => {
     expect(global.fetch).toHaveBeenCalledWith("/api/quotes/1", { method: "DELETE" });
   });
 
-  it("loadSample() POSTs to the sample endpoint", async () => {
-    global.fetch.mockResolvedValue(jsonResponse([{ id: "1" }]));
-    await quotesApi.loadSample();
-    expect(global.fetch).toHaveBeenCalledWith("/api/quotes/sample", { method: "POST" });
-  });
-
   it("clearAll() DELETEs the whole register", async () => {
     global.fetch.mockResolvedValue(jsonResponse(null, 204));
     await quotesApi.clearAll();

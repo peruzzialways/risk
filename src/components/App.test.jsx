@@ -20,10 +20,6 @@ vi.mock("recharts", () => {
 vi.mock("../lib/quotesApi.js", () => {
   let db = [];
   let nextId = 1;
-  const SAMPLE_QUOTE = {
-    insured: "Adekunle Manufacturing Ltd", broker: "Crownfield Brokers", riskClass: "Fire and Special Perils",
-    month: "Jan", year: 2026, sumInsured: 850000000, premium: 4250000, status: "Incepted", roComment: "Renewal confirmed.",
-  };
   const quotesApi = {
     list: vi.fn(() => Promise.resolve(db)),
     create: vi.fn((record) => {
@@ -38,10 +34,6 @@ vi.mock("../lib/quotesApi.js", () => {
     remove: vi.fn((id) => {
       db = db.filter((q) => q.id !== id);
       return Promise.resolve(null);
-    }),
-    loadSample: vi.fn(() => {
-      db = [{ id: "sample1", createdAt: Date.now(), ...SAMPLE_QUOTE }];
-      return Promise.resolve(db);
     }),
     clearAll: vi.fn(() => {
       db = [];
@@ -74,13 +66,6 @@ describe("App", () => {
     render(<App />);
     expect(await screen.findByText("Alpha Mills")).toBeInTheDocument();
     expect(screen.getByText("Beta Hotels")).toBeInTheDocument();
-  });
-
-  it("loads sample data from the empty state", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-    await user.click(await screen.findByRole("button", { name: /load sample data/i }));
-    expect(await screen.findByText("Adekunle Manufacturing Ltd")).toBeInTheDocument();
   });
 
   it("adds a new quote through the form and persists it", async () => {

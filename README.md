@@ -73,13 +73,12 @@ src/
     api/quotes/
       route.js                 GET (list), POST (create), DELETE (clear all)
       [id]/route.js             PATCH (update one), DELETE (remove one)
-      sample/route.js           POST (bulk-insert sample data)
   components/
     App.jsx                    UI (dashboard, table, form, charts)
     App.test.jsx
     ErrorBoundary.jsx
   lib/
-    constants.js               Risk classes, months, colors, sample data
+    constants.js               Risk classes, months, colors, form defaults
     format.js                   Naira formatters
     quotes.js                    Filtering, totals, validation (pure logic)
     report.js                    Excel workbook builder

@@ -46,19 +46,3 @@ export const makeBlankForm = () => ({
   status: "Pending",
   roComment: "",
 });
-
-const SAMPLE_ROWS = [
-  { insured: "Adekunle Manufacturing Ltd", broker: "Crownfield Brokers", riskClass: "Fire and Special Perils", month: "Jan", sumInsured: 850000000, premium: 4250000, status: "Incepted", roComment: "Renewal confirmed, premium received in full." },
-  { insured: "Harbourpoint Logistics", broker: "Direct", riskClass: "Burglary", month: "Feb", sumInsured: 120000000, premium: 960000, status: "Pending", roComment: "Client requested revised excess terms; awaiting response." },
-  { insured: "Crestline Hotels & Suites", broker: "Meridian Risk Services", riskClass: "IAR", month: "Feb", sumInsured: 2400000000, premium: 14400000, status: "Incepted", roComment: "Incepted after survey. Sprinkler recommendation noted." },
-  { insured: "Bluewave Power Projects", broker: "Crownfield Brokers", riskClass: "CAR", month: "Mar", sumInsured: 5600000000, premium: 42000000, status: "Pending", roComment: "Competing quote from market; RO negotiating rate." },
-  { insured: "Sterling Foods Processing", broker: "Meridian Risk Services", riskClass: "BI", month: "Mar", sumInsured: 950000000, premium: 5700000, status: "Incepted", roComment: "Bound with 12-month indemnity period." },
-  { insured: "Nova Data Centres", broker: "Direct", riskClass: "Electronic Equipment", month: "Apr", sumInsured: 680000000, premium: 6120000, status: "Incepted", roComment: "Client paid 100%. Cover note issued." },
-  { insured: "Ridgeway Estates", broker: "Palmgrove Insurance Brokers", riskClass: "Householder", month: "May", sumInsured: 75000000, premium: 375000, status: "Pending", roComment: "Awaiting KYC documents from insured." },
-  { insured: "Zephyr Engineering Works", broker: "Crownfield Brokers", riskClass: "Plant All Risk", month: "Jun", sumInsured: 430000000, premium: 3870000, status: "Pending", roComment: "Follow-up call scheduled; budget approval pending." },
-  { insured: "Lighthouse Galleries", broker: "Direct", riskClass: "Art Works All Risk", month: "Jun", sumInsured: 310000000, premium: 4650000, status: "Incepted", roComment: "Valuation certificates received. Policy issued." },
-  { insured: "Summit Breweries Expansion", broker: "Meridian Risk Services", riskClass: "Delay In Start Up", month: "Jul", sumInsured: 1800000000, premium: 19800000, status: "Pending", roComment: "Reinsurance support being arranged before inception." },
-];
-
-/** Sample rows with the current year applied, ready for server-side insert (no id/createdAt - the database assigns those). */
-export const sampleRowsForInsert = () => SAMPLE_ROWS.map((q) => ({ ...q, year: CURRENT_YEAR }));
