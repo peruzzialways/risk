@@ -16,9 +16,9 @@ export const C = {
 export const RISK_CLASSES = [
   "All Risk",
   "Art Works All Risk",
-  "BI",
   "Boiler",
   "Burglary",
+  "Business Interruption",
   "CAR",
   "Combined Policy",
   "Delay In Start Up",
