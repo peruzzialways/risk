@@ -4,7 +4,7 @@ A dashboard for a Commercial Property Risk Unit's day-to-day quotation activitie
 
 ## Features
 
-- Quote submission form capturing insured/risk name, broker or source, risk class (15 classes including Fire and Special Perils, Fire only, IAR, BI, Burglary, CAR, EAR, Plant All Risk, Electronic Equipment, Boiler, Householder, All Risk, Delay In Start Up, Art Works All Risk, Other), month, year, sum insured, premium, conversion status, and the Relationship Officer's comment.
+- Quote submission form capturing insured/risk name, broker or source, risk class (16 classes including Fire and Special Perils, Fire only, IAR, BI, Burglary, CAR, EAR, Plant All Risk, Electronic Equipment, Boiler, Householder, All Risk, Delay In Start Up, Art Works All Risk, Combined Policy, Other), month, year, sum insured, premium, conversion status, and the Relationship Officer's comment.
 - Filters by risk class, month (Jan–Dec), conversion status, and free-text search across insured and broker names. All totals, charts, and the register table respond together.
 - Stat strip showing quotes in view, total premium, total sum insured, conversion rate, and incepted premium.
 - Donut chart of converted vs unconverted risks, a premium-progress pie, and a stacked premium-by-month bar chart.

@@ -14,21 +14,22 @@ export const C = {
 };
 
 export const RISK_CLASSES = [
-  "Fire and Special Perils",
-  "Fire only",
-  "IAR",
+  "All Risk",
+  "Art Works All Risk",
   "BI",
+  "Boiler",
   "Burglary",
   "CAR",
-  "EAR",
-  "Plant All Risk",
-  "Electronic Equipment",
-  "Boiler",
-  "Householder",
-  "All Risk",
+  "Combined Policy",
   "Delay In Start Up",
-  "Art Works All Risk",
+  "EAR",
+  "Electronic Equipment",
+  "Fire and Special Perils",
+  "Fire only",
+  "Householder",
+  "IAR",
   "Other",
+  "Plant All Risk",
 ];
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
