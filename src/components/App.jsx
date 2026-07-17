@@ -38,7 +38,7 @@ function StatusChip({ status, onClick }) {
 function StatCard({ label, value, sub, accent }) {
   return (
     <div
-      className="flex-1 min-w-0 rounded-xl px-5 py-4"
+      className="min-w-0 rounded-xl px-4 py-4 sm:px-5"
       style={{ background: C.card, border: `1px solid ${C.line}` }}
     >
       <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: C.inkSoft }}>
@@ -72,6 +72,48 @@ const inputStyle = {
   border: `1px solid ${C.line}`, background: "#FBFCFE",
   color: C.ink, fontSize: 14, outline: "none",
 };
+
+/** RO comment cell/field, shared by the desktop table row and the mobile card. */
+function CommentCell({ quote, editing, draft, onDraftChange, onStartEdit, onSave, onCancel }) {
+  if (editing) {
+    return (
+      <div>
+        <textarea
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
+          rows={2}
+          style={{ ...inputStyle, fontSize: 13 }}
+          aria-label="Edit RO comment"
+          autoFocus
+        />
+        <div className="mt-1 flex gap-2">
+          <button onClick={onSave} className="text-xs font-semibold text-white px-2.5 py-1 rounded" style={{ background: C.teal }}>Save</button>
+          <button onClick={onCancel} className="text-xs font-semibold px-2.5 py-1 rounded" style={{ color: C.inkSoft }}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <button
+      onClick={onStartEdit}
+      className="text-left text-xs leading-snug hover:underline"
+      style={{ color: quote.roComment ? C.ink : C.inkSoft }}
+      title="Click to edit comment"
+    >
+      {quote.roComment || "Add comment…"}
+    </button>
+  );
+}
+
+/** Edit / Delete buttons, shared by the desktop table row and the mobile card. */
+function RowActions({ onEdit, onDelete }) {
+  return (
+    <>
+      <button onClick={onEdit} className="text-xs font-semibold mr-3 hover:underline" style={{ color: C.ink }}>Edit</button>
+      <button onClick={onDelete} className="text-xs font-semibold hover:underline" style={{ color: C.red }}>Delete</button>
+    </>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Main app                                                           */
@@ -246,7 +288,7 @@ export default function App() {
   return (
     <div className="min-h-screen pb-16" style={{ background: C.paper, fontFamily: "'IBM Plex Sans', system-ui, sans-serif", color: C.ink }}>
       {/* ---------------- Masthead ---------------- */}
-      <header className="px-6 py-5" style={{ background: C.ink }}>
+      <header className="px-4 py-5 sm:px-6" style={{ background: C.ink }}>
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#8FA3C4" }}>
@@ -256,7 +298,7 @@ export default function App() {
               Quotation &amp; Risk Register
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {saveError && (
               <span className="text-xs px-3 py-1 rounded-full" style={{ background: "#3A2224", color: "#F3B8B4" }}>
                 Save failed — changes may not persist
@@ -283,41 +325,49 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* ---------------- Filters ---------------- */}
         <section
           className="mt-6 rounded-xl px-4 py-3 flex flex-wrap items-end gap-3"
           style={{ background: C.card, border: `1px solid ${C.line}` }}
         >
-          <Field label="Risk class">
-            <select aria-label="Risk class filter" value={filterClass} onChange={(e) => setFilterClass(e.target.value)} style={{ ...inputStyle, width: 210 }}>
-              <option>All</option>
-              {RISK_CLASSES.map((r) => <option key={r}>{r}</option>)}
-            </select>
-          </Field>
-          <Field label="Month">
-            <select aria-label="Month filter" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ ...inputStyle, width: 110 }}>
-              <option>All</option>
-              {MONTHS.map((m) => <option key={m}>{m}</option>)}
-            </select>
-          </Field>
-          <Field label="Conversion status">
-            <select aria-label="Conversion status filter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ ...inputStyle, width: 140 }}>
-              <option>All</option>
-              <option>Incepted</option>
-              <option>Pending</option>
-            </select>
-          </Field>
-          <Field label="Search insured / broker">
-            <input
-              aria-label="Search insured or broker" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="e.g. Crestline" style={{ ...inputStyle, width: 200 }}
-            />
-          </Field>
+          <div className="w-full sm:w-[210px]">
+            <Field label="Risk class">
+              <select aria-label="Risk class filter" value={filterClass} onChange={(e) => setFilterClass(e.target.value)} style={inputStyle}>
+                <option>All</option>
+                {RISK_CLASSES.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="w-[calc(50%-6px)] sm:w-[110px]">
+            <Field label="Month">
+              <select aria-label="Month filter" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={inputStyle}>
+                <option>All</option>
+                {MONTHS.map((m) => <option key={m}>{m}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="w-[calc(50%-6px)] sm:w-[140px]">
+            <Field label="Conversion status">
+              <select aria-label="Conversion status filter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={inputStyle}>
+                <option>All</option>
+                <option>Incepted</option>
+                <option>Pending</option>
+              </select>
+            </Field>
+          </div>
+          <div className="w-full sm:w-[200px]">
+            <Field label="Search insured / broker">
+              <input
+                aria-label="Search insured or broker" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="e.g. Crestline" style={inputStyle}
+              />
+            </Field>
+          </div>
           {activeFilters && (
             <button
               onClick={() => { setFilterClass("All"); setFilterMonth("All"); setFilterStatus("All"); setSearch(""); }}
-              className="ml-auto text-sm font-semibold underline"
+              className="sm:ml-auto text-sm font-semibold underline"
               style={{ color: C.inkSoft }}
             >
               Clear filters
@@ -326,7 +376,7 @@ export default function App() {
         </section>
 
         {/* ---------------- Stat strip ---------------- */}
-        <section className="mt-5 flex flex-wrap gap-3">
+        <section className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <StatCard label="Quotes in view" value={filtered.length} sub={`${quotes.length} in register`} />
           <StatCard label="Total premium" value={fmtCompact(totals.premium)} sub={fmtN(totals.premium)} />
           <StatCard label="Total sum insured" value={fmtCompact(totals.sumInsured)} sub={fmtN(totals.sumInsured)} />
@@ -436,74 +486,107 @@ export default function App() {
               <p className="text-sm mt-1" style={{ color: C.inkSoft }}>Adjust the risk class, month, or status filters to see results.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm" style={{ minWidth: 900 }}>
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wider" style={{ color: C.inkSoft, background: "#F7F9FC" }}>
-                    <th className="px-4 py-3 font-semibold">Insured / Risk</th>
-                    <th className="px-4 py-3 font-semibold">Risk class</th>
-                    <th className="px-4 py-3 font-semibold">Month</th>
-                    <th className="px-4 py-3 font-semibold text-right">Sum insured</th>
-                    <th className="px-4 py-3 font-semibold text-right">Premium</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold" style={{ minWidth: 220 }}>RO comment</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((q, i) => (
-                    <tr key={q.id} style={{ borderTop: `1px solid ${C.line}`, background: i % 2 ? "#FBFCFE" : "#FFFFFF" }}>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold">{q.insured}</div>
-                        {q.broker && <div className="text-xs" style={{ color: C.inkSoft }}>{q.broker}</div>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: C.navyChip, color: C.ink }}>
-                          {q.riskClass}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">{q.month} {q.year || CURRENT_YEAR}</td>
-                      <td className="px-4 py-3 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.sumInsured)}</td>
-                      <td className="px-4 py-3 text-right font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.premium)}</td>
-                      <td className="px-4 py-3">
-                        <StatusChip status={q.status} onClick={() => toggleStatus(q.id)} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {commentEditId === q.id ? (
-                          <div>
-                            <textarea
-                              value={commentDraft}
-                              onChange={(e) => setCommentDraft(e.target.value)}
-                              rows={2}
-                              style={{ ...inputStyle, fontSize: 13 }}
-                              aria-label="Edit RO comment"
-                              autoFocus
-                            />
-                            <div className="mt-1 flex gap-2">
-                              <button onClick={() => saveComment(q.id)} className="text-xs font-semibold text-white px-2.5 py-1 rounded" style={{ background: C.teal }}>Save</button>
-                              <button onClick={() => setCommentEditId(null)} className="text-xs font-semibold px-2.5 py-1 rounded" style={{ color: C.inkSoft }}>Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setCommentEditId(q.id); setCommentDraft(q.roComment || ""); }}
-                            className="text-left text-xs leading-snug hover:underline"
-                            style={{ color: q.roComment ? C.ink : C.inkSoft }}
-                            title="Click to edit comment"
-                          >
-                            {q.roComment || "Add comment…"}
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <button onClick={() => openEdit(q)} className="text-xs font-semibold mr-3 hover:underline" style={{ color: C.ink }}>Edit</button>
-                        <button onClick={() => deleteQuote(q.id)} className="text-xs font-semibold hover:underline" style={{ color: C.red }}>Delete</button>
-                      </td>
+            <>
+              {/* Mobile: one card per quote (below sm) */}
+              <div className="sm:hidden divide-y" data-testid="quotes-cards" style={{ borderColor: C.line }}>
+                {filtered.map((q) => (
+                  <div key={q.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold truncate">{q.insured}</div>
+                        {q.broker && <div className="text-xs truncate" style={{ color: C.inkSoft }}>{q.broker}</div>}
+                      </div>
+                      <StatusChip status={q.status} onClick={() => toggleStatus(q.id)} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="px-2 py-0.5 rounded font-medium" style={{ background: C.navyChip, color: C.ink }}>
+                        {q.riskClass}
+                      </span>
+                      <span style={{ color: C.inkSoft }}>{q.month} {q.year || CURRENT_YEAR}</span>
+                    </div>
+
+                    <div className="flex justify-between gap-4 text-sm">
+                      <div>
+                        <div className="text-xs" style={{ color: C.inkSoft }}>Sum insured</div>
+                        <div style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.sumInsured)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs" style={{ color: C.inkSoft }}>Premium</div>
+                        <div className="font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.premium)}</div>
+                      </div>
+                    </div>
+
+                    <CommentCell
+                      quote={q}
+                      editing={commentEditId === q.id}
+                      draft={commentDraft}
+                      onDraftChange={setCommentDraft}
+                      onStartEdit={() => { setCommentEditId(q.id); setCommentDraft(q.roComment || ""); }}
+                      onSave={() => saveComment(q.id)}
+                      onCancel={() => setCommentEditId(null)}
+                    />
+
+                    <div className="flex justify-end pt-1">
+                      <RowActions onEdit={() => openEdit(q)} onDelete={() => deleteQuote(q.id)} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop/tablet: full table (sm and up) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm" style={{ minWidth: 900 }}>
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wider" style={{ color: C.inkSoft, background: "#F7F9FC" }}>
+                      <th className="px-4 py-3 font-semibold">Insured / Risk</th>
+                      <th className="px-4 py-3 font-semibold">Risk class</th>
+                      <th className="px-4 py-3 font-semibold">Month</th>
+                      <th className="px-4 py-3 font-semibold text-right">Sum insured</th>
+                      <th className="px-4 py-3 font-semibold text-right">Premium</th>
+                      <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold" style={{ minWidth: 220 }}>RO comment</th>
+                      <th className="px-4 py-3" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((q, i) => (
+                      <tr key={q.id} style={{ borderTop: `1px solid ${C.line}`, background: i % 2 ? "#FBFCFE" : "#FFFFFF" }}>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold">{q.insured}</div>
+                          {q.broker && <div className="text-xs" style={{ color: C.inkSoft }}>{q.broker}</div>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: C.navyChip, color: C.ink }}>
+                            {q.riskClass}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">{q.month} {q.year || CURRENT_YEAR}</td>
+                        <td className="px-4 py-3 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.sumInsured)}</td>
+                        <td className="px-4 py-3 text-right font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.premium)}</td>
+                        <td className="px-4 py-3">
+                          <StatusChip status={q.status} onClick={() => toggleStatus(q.id)} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <CommentCell
+                            quote={q}
+                            editing={commentEditId === q.id}
+                            draft={commentDraft}
+                            onDraftChange={setCommentDraft}
+                            onStartEdit={() => { setCommentEditId(q.id); setCommentDraft(q.roComment || ""); }}
+                            onSave={() => saveComment(q.id)}
+                            onCancel={() => setCommentEditId(null)}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <RowActions onEdit={() => openEdit(q)} onDelete={() => deleteQuote(q.id)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </section>
 
@@ -511,7 +594,7 @@ export default function App() {
         {quotes.length > 0 && (
           <div className="mt-4 flex justify-end">
             {confirmClear ? (
-              <span className="text-xs flex items-center gap-2" style={{ color: C.inkSoft }}>
+              <span className="text-xs flex flex-wrap items-center justify-end gap-2" style={{ color: C.inkSoft }}>
                 Delete all {quotes.length} quotes permanently?
                 <button onClick={clearAll} className="font-semibold" style={{ color: C.red }}>Yes, clear register</button>
                 <button onClick={() => setConfirmClear(false)} className="font-semibold" style={{ color: C.ink }}>Cancel</button>
@@ -532,7 +615,7 @@ export default function App() {
           style={{ background: "rgba(20,30,48,0.55)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
         >
-          <div className="w-full max-w-lg rounded-2xl p-6 my-6" style={{ background: C.card }} role="dialog" aria-modal="true">
+          <div className="w-full max-w-lg rounded-2xl p-4 my-6 sm:p-6" style={{ background: C.card }} role="dialog" aria-modal="true">
             <h2 className="text-xl" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}>
               {editingId ? "Edit quotation" : "Log new quotation"}
             </h2>

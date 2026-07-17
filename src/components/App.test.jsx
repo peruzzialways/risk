@@ -64,8 +64,12 @@ describe("App", () => {
   it("loads persisted quotes from the API on start", async () => {
     quotesApi.__seed(TWO_QUOTES);
     render(<App />);
-    expect(await screen.findByText("Alpha Mills")).toBeInTheDocument();
-    expect(screen.getByText("Beta Hotels")).toBeInTheDocument();
+    // jsdom doesn't evaluate the sm: breakpoint CSS, so both the mobile card
+    // list and the desktop table render at once - scope to the table, which
+    // is the one unique landmark between them.
+    const table = within(await screen.findByRole("table"));
+    expect(table.getByText("Alpha Mills")).toBeInTheDocument();
+    expect(table.getByText("Beta Hotels")).toBeInTheDocument();
   });
 
   it("adds a new quote through the form and persists it", async () => {
@@ -80,7 +84,8 @@ describe("App", () => {
     await user.type(screen.getByLabelText(/premium/i), "50000");
     await user.click(screen.getByRole("button", { name: /add to register/i }));
 
-    expect(await screen.findByText("Testline Factories")).toBeInTheDocument();
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText("Testline Factories")).toBeInTheDocument();
     expect(quotesApi.create).toHaveBeenCalledWith(
       expect.objectContaining({ insured: "Testline Factories", riskClass: "Burglary", month: "Feb", premium: 50000, status: "Pending" })
     );
@@ -99,32 +104,35 @@ describe("App", () => {
     quotesApi.__seed(TWO_QUOTES);
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText("Alpha Mills");
+    const table = within(await screen.findByRole("table"));
+    await table.findByText("Alpha Mills");
 
     await user.selectOptions(screen.getByLabelText("Risk class filter"), "IAR");
-    expect(screen.queryByText("Alpha Mills")).not.toBeInTheDocument();
-    expect(screen.getByText("Beta Hotels")).toBeInTheDocument();
+    expect(table.queryByText("Alpha Mills")).not.toBeInTheDocument();
+    expect(table.getByText("Beta Hotels")).toBeInTheDocument();
   });
 
   it("filters the table by month", async () => {
     quotesApi.__seed(TWO_QUOTES);
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText("Alpha Mills");
+    const table = within(await screen.findByRole("table"));
+    await table.findByText("Alpha Mills");
 
     await user.selectOptions(screen.getByLabelText("Month filter"), "Jan");
-    expect(screen.getByText("Alpha Mills")).toBeInTheDocument();
-    expect(screen.queryByText("Beta Hotels")).not.toBeInTheDocument();
+    expect(table.getByText("Alpha Mills")).toBeInTheDocument();
+    expect(table.queryByText("Beta Hotels")).not.toBeInTheDocument();
   });
 
   it("toggles conversion status from the table and persists the change", async () => {
     quotesApi.__seed([TWO_QUOTES[1]]); // one Pending quote
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText("Beta Hotels");
+    const table = within(await screen.findByRole("table"));
+    await table.findByText("Beta Hotels");
 
-    await user.click(screen.getByRole("button", { name: /pending/i }));
-    expect(await screen.findByRole("button", { name: /incepted/i })).toBeInTheDocument();
+    await user.click(table.getByRole("button", { name: /pending/i }));
+    expect(await table.findByRole("button", { name: /incepted/i })).toBeInTheDocument();
     expect(quotesApi.update).toHaveBeenCalledWith("b2", { status: "Incepted" });
   });
 
@@ -132,15 +140,16 @@ describe("App", () => {
     quotesApi.__seed([TWO_QUOTES[0]]);
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText("Alpha Mills");
+    const table = within(await screen.findByRole("table"));
+    await table.findByText("Alpha Mills");
 
-    await user.click(screen.getByRole("button", { name: "Bound" }));
-    const box = screen.getByLabelText(/edit ro comment/i);
+    await user.click(table.getByRole("button", { name: "Bound" }));
+    const box = table.getByLabelText(/edit ro comment/i);
     await user.clear(box);
     await user.type(box, "Premium received in full");
-    await user.click(screen.getByRole("button", { name: /^save$/i }));
+    await user.click(table.getByRole("button", { name: /^save$/i }));
 
-    expect(await screen.findByText("Premium received in full")).toBeInTheDocument();
+    expect(await table.findByText("Premium received in full")).toBeInTheDocument();
     expect(quotesApi.update).toHaveBeenCalledWith("a1", { roComment: "Premium received in full" });
   });
 
@@ -148,13 +157,22 @@ describe("App", () => {
     quotesApi.__seed(TWO_QUOTES);
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByText("Alpha Mills");
+    const table = within(await screen.findByRole("table"));
+    await table.findByText("Alpha Mills");
 
-    const row = screen.getByText("Alpha Mills").closest("tr");
+    const row = table.getByText("Alpha Mills").closest("tr");
     await user.click(within(row).getByRole("button", { name: /delete/i }));
 
-    expect(screen.queryByText("Alpha Mills")).not.toBeInTheDocument();
+    expect(table.queryByText("Alpha Mills")).not.toBeInTheDocument();
     expect(quotesApi.remove).toHaveBeenCalledWith("a1");
+  });
+
+  it("also renders the mobile card list (shown below the sm breakpoint via CSS)", async () => {
+    quotesApi.__seed(TWO_QUOTES);
+    render(<App />);
+    const cards = within(await screen.findByTestId("quotes-cards"));
+    expect(await cards.findByText("Alpha Mills")).toBeInTheDocument();
+    expect(cards.getByText("Beta Hotels")).toBeInTheDocument();
   });
 
   it("shows the Excel report button only when the register has data", async () => {
