@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { RISK_CLASSES, MONTHS, CURRENT_YEAR } from "./constants.js";
+import { fmtDate } from "./format.js";
 
 /** Excel sheet names: max 31 chars, no \ / ? * [ ] : characters. */
 export const cleanSheetName = (name) =>
@@ -13,6 +14,7 @@ export const detailRows = (rows) =>
     "Risk Class": q.riskClass,
     Month: q.month,
     Year: q.year || CURRENT_YEAR,
+    "Date Logged": fmtDate(q.createdAt),
     "Sum Insured (₦)": q.sumInsured,
     "Premium (₦)": q.premium,
     "Conversion Status": q.status,
@@ -47,7 +49,7 @@ export const summaryRow = (label, labelKey, rows) => {
   };
 };
 
-const DETAIL_WIDTHS = [30, 24, 24, 8, 8, 18, 16, 18, 45];
+const DETAIL_WIDTHS = [30, 24, 24, 8, 8, 14, 18, 16, 18, 45];
 const SUMMARY_WIDTHS = [26, 14, 22, 20, 10, 10, 22, 20];
 
 const addSheet = (wb, name, rows, widths) => {

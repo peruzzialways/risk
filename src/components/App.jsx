@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
 import { C, RISK_CLASSES, MONTHS, CURRENT_YEAR, makeBlankForm } from "../lib/constants.js";
-import { fmtN, fmtCompact } from "../lib/format.js";
+import { fmtN, fmtCompact, fmtDate } from "../lib/format.js";
 import {
   filterQuotes, computeTotals, conversionRate, monthlyChartData,
   validateQuote, normalizeQuote,
@@ -130,6 +130,7 @@ export default function App() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [formCreatedAt, setFormCreatedAt] = useState(null);
   const [form, setForm] = useState(makeBlankForm());
   const [formError, setFormError] = useState("");
 
@@ -162,7 +163,7 @@ export default function App() {
   };
 
   /* ---------- actions ---------- */
-  const openAdd = () => { setForm(makeBlankForm()); setEditingId(null); setFormError(""); setShowForm(true); };
+  const openAdd = () => { setForm(makeBlankForm()); setEditingId(null); setFormCreatedAt(null); setFormError(""); setShowForm(true); };
 
   const openEdit = (q) => {
     setForm({
@@ -171,7 +172,7 @@ export default function App() {
       sumInsured: String(q.sumInsured), premium: String(q.premium),
       status: q.status, roComment: q.roComment || "",
     });
-    setEditingId(q.id); setFormError(""); setShowForm(true);
+    setEditingId(q.id); setFormCreatedAt(q.createdAt); setFormError(""); setShowForm(true);
   };
 
   const submitForm = async () => {
@@ -504,6 +505,7 @@ export default function App() {
                         {q.riskClass}
                       </span>
                       <span style={{ color: C.inkSoft }}>{q.month} {q.year || CURRENT_YEAR}</span>
+                      <span style={{ color: C.inkSoft }}>· Logged {fmtDate(q.createdAt)}</span>
                     </div>
 
                     <div className="flex justify-between gap-4 text-sm">
@@ -536,12 +538,13 @@ export default function App() {
 
               {/* Desktop/tablet: full table (sm and up) */}
               <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: 900 }}>
+                <table className="w-full text-sm" style={{ minWidth: 980 }}>
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wider" style={{ color: C.inkSoft, background: "#F7F9FC" }}>
                       <th className="px-4 py-3 font-semibold">Insured / Risk</th>
                       <th className="px-4 py-3 font-semibold">Risk class</th>
                       <th className="px-4 py-3 font-semibold">Month</th>
+                      <th className="px-4 py-3 font-semibold whitespace-nowrap">Date logged</th>
                       <th className="px-4 py-3 font-semibold text-right">Sum insured</th>
                       <th className="px-4 py-3 font-semibold text-right">Premium</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
@@ -562,6 +565,7 @@ export default function App() {
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">{q.month} {q.year || CURRENT_YEAR}</td>
+                        <td className="px-4 py-3 whitespace-nowrap" style={{ color: C.inkSoft }}>{fmtDate(q.createdAt)}</td>
                         <td className="px-4 py-3 text-right" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.sumInsured)}</td>
                         <td className="px-4 py-3 text-right font-semibold" style={{ fontVariantNumeric: "tabular-nums" }}>{fmtN(q.premium)}</td>
                         <td className="px-4 py-3">
@@ -619,9 +623,12 @@ export default function App() {
             <h2 className="text-xl" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}>
               {editingId ? "Edit quotation" : "Log new quotation"}
             </h2>
-            <p className="text-xs mt-0.5 mb-4" style={{ color: C.inkSoft }}>
-              Entries are saved to the shared register database automatically.
-            </p>
+            <div className="text-xs mt-0.5 mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1" style={{ color: C.inkSoft }}>
+              <span>Entries are saved to the shared register database automatically.</span>
+              <span className="font-semibold whitespace-nowrap" style={{ color: C.ink }}>
+                {editingId ? `Logged ${fmtDate(formCreatedAt)}` : `Today, ${fmtDate(new Date())}`}
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">

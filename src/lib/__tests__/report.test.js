@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import * as XLSX from "xlsx";
 import { cleanSheetName, detailRows, summarize, summaryRow, buildWorkbook } from "../report.js";
+import { fmtDate } from "../format.js";
 
 const QUOTES = [
-  { id: "a", insured: "Alpha Mills", broker: "Crownfield", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "Bound" },
-  { id: "b", insured: "Beta Hotels", broker: "", riskClass: "IAR", month: "Mar", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "" },
-  { id: "c", insured: "Gamma Works", broker: "Meridian", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "Paid" },
+  { id: "a", insured: "Alpha Mills", broker: "Crownfield", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "Bound", createdAt: "2026-01-05T10:00:00.000Z" },
+  { id: "b", insured: "Beta Hotels", broker: "", riskClass: "IAR", month: "Mar", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "", createdAt: "2026-03-10T10:00:00.000Z" },
+  { id: "c", insured: "Gamma Works", broker: "Meridian", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "Paid", createdAt: "2025-03-15T10:00:00.000Z" },
 ];
 
 describe("cleanSheetName", () => {
@@ -31,6 +32,7 @@ describe("detailRows", () => {
       "Risk Class": "Fire only",
       Month: "Jan",
       Year: 2026,
+      "Date Logged": fmtDate("2026-01-05T10:00:00.000Z"),
       "Sum Insured (\u20A6)": 100,
       "Premium (\u20A6)": 10,
       "Conversion Status": "Incepted",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fmtN, fmtCompact } from "../format.js";
+import { fmtN, fmtCompact, fmtDate } from "../format.js";
 
 describe("fmtN", () => {
   it("formats full naira amounts with thousands separators", () => {
@@ -30,5 +30,21 @@ describe("fmtCompact", () => {
   it("formats sub-thousand values as plain naira", () => {
     expect(fmtCompact(950)).toBe("\u20A6950");
     expect(fmtCompact(0)).toBe("\u20A60");
+  });
+});
+
+describe("fmtDate", () => {
+  it("formats an ISO timestamp as day, short month, year", () => {
+    expect(fmtDate("2026-07-17T21:19:25.909874+00:00")).toBe("17 Jul 2026");
+  });
+
+  it("formats an epoch-ms value", () => {
+    expect(fmtDate(Date.UTC(2024, 0, 15, 12, 0, 0))).toBe("15 Jan 2024");
+  });
+
+  it("returns an empty string for missing or invalid input", () => {
+    expect(fmtDate(null)).toBe("");
+    expect(fmtDate(undefined)).toBe("");
+    expect(fmtDate("not-a-date")).toBe("");
   });
 });

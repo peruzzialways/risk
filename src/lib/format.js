@@ -10,3 +10,11 @@ export const fmtCompact = (n) => {
   if (v >= 1e3) return "\u20A6" + (v / 1e3).toFixed(0) + "k";
   return "\u20A6" + v.toFixed(0);
 };
+
+/** Human-readable date, e.g. 17 Jul 2026. Accepts an ISO string, epoch ms, or Date. */
+export const fmtDate = (value) => {
+  if (value == null) return "";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+};
