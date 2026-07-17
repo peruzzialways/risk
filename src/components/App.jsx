@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -291,13 +292,16 @@ export default function App() {
       {/* ---------------- Masthead ---------------- */}
       <header className="px-4 py-5 sm:px-6" style={{ background: C.ink }}>
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#8FA3C4" }}>
-              Commercial Property Risk Unit
+          <div className="flex items-center gap-3">
+            <Image src="/leadway-emblem.png" alt="Leadway Assurance" width={51} height={44} priority />
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#8FA3C4" }}>
+                Commercial Property Risk Unit
+              </div>
+              <h1 className="text-white text-2xl md:text-3xl" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}>
+                Quotation &amp; Risk Register
+              </h1>
             </div>
-            <h1 className="text-white text-2xl md:text-3xl" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}>
-              Quotation &amp; Risk Register
-            </h1>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {saveError && (
