@@ -14,7 +14,7 @@ export const C = {
 };
 
 export const RISK_CLASSES = [
-  "All Risk",
+  "All Risks",
   "Art Works All Risk",
   "Boiler",
   "Burglary",
@@ -29,7 +29,7 @@ export const RISK_CLASSES = [
   "Householder",
   "IAR",
   "Plant All Risk",
-  "Other",
+  "Others",
 ];
 
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
