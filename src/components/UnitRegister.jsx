@@ -648,13 +648,13 @@ export default function UnitRegister({ unit }) {
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wider" style={{ color: C.inkSoft, background: "#F7F9FC" }}>
                       <th className="px-4 py-3 font-semibold">Insured / Risk</th>
-                      <th className="px-4 py-3 font-semibold">Officer</th>
                       <th className="px-4 py-3 font-semibold">Risk class</th>
                       <th className="px-4 py-3 font-semibold">Month</th>
                       <th className="px-4 py-3 font-semibold whitespace-nowrap">Date logged</th>
                       <th className="px-4 py-3 font-semibold text-right">Sum insured</th>
                       <th className="px-4 py-3 font-semibold text-right">Premium</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold">Officer</th>
                       <th className="px-4 py-3 font-semibold" style={{ minWidth: 220 }}>RO comment</th>
                       <th className="px-4 py-3" />
                     </tr>
@@ -666,7 +666,6 @@ export default function UnitRegister({ unit }) {
                           <div className="font-semibold">{q.insured}</div>
                           {q.broker && <div className="text-xs" style={{ color: C.inkSoft }}>{q.broker}</div>}
                         </td>
-                        <td className="px-4 py-3">{q.officer || "Unassigned"}</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: C.navyChip, color: C.ink }}>
                             {q.riskClass}
@@ -679,6 +678,7 @@ export default function UnitRegister({ unit }) {
                         <td className="px-4 py-3">
                           <StatusChip status={q.status} onClick={() => toggleStatus(q.id)} />
                         </td>
+                        <td className="px-4 py-3">{q.officer || "Unassigned"}</td>
                         <td className="px-4 py-3">
                           <CommentCell
                             quote={q}
