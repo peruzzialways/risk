@@ -13,33 +13,23 @@ export const C = {
   navyChip: "#EAEEF5",
 };
 
-export const RISK_CLASSES = [
-  "All Risks",
-  "Art Works All Risk",
-  "Boiler",
-  "Burglary",
-  "Business Interruption",
-  "CAR",
-  "Combined Policy",
-  "Delay In Start Up",
-  "EAR",
-  "Electronic Equipment",
-  "Fire and Special Perils",
-  "Fire only",
-  "Householder",
-  "IAR",
-  "Plant All Risk",
-  "Others",
-];
-
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export const CURRENT_YEAR = new Date().getFullYear();
 
-export const makeBlankForm = () => ({
+/**
+ * Validated categorical palette (identity encoding - e.g. one color per
+ * officer), fixed order for CVD safety. Past 8 series, fold into "Other"
+ * (OTHER_COLOR) rather than generating a 9th hue.
+ */
+export const CATEGORICAL_COLORS = ["#2a78d6", "#008300", "#e87ba4", "#eda100", "#1baf7a", "#eb6834", "#4a3aa7", "#e34948"];
+export const OTHER_COLOR = "#898781";
+
+export const makeBlankForm = (riskClasses) => ({
   insured: "",
   broker: "",
-  riskClass: RISK_CLASSES[0],
+  officer: "",
+  riskClass: riskClasses[0],
   month: MONTHS[new Date().getMonth()],
   year: String(CURRENT_YEAR),
   sumInsured: "",

@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabaseServer.js";
 import { rowToQuote, quoteToRow } from "@/lib/quoteMapping.js";
 import { validateQuote, normalizeQuote } from "@/lib/quotes.js";
+import { getUnit } from "@/lib/units.js";
 
 const notFoundOr500 = (error) =>
   NextResponse.json({ error: error.message }, { status: error.code === "PGRST116" ? 404 : 500 });
 
 export async function PATCH(request, { params }) {
-  const { id } = params;
+  const { unit, id } = params;
+  if (!getUnit(unit)) return NextResponse.json({ error: "Unknown unit" }, { status: 404 });
+
   const body = await request.json();
 
   // A full edit-form save includes `insured`; partial patches (status toggle,
@@ -23,6 +26,7 @@ export async function PATCH(request, { params }) {
   const { data, error } = await supabase
     .from("quotes")
     .update(quoteToRow(patch))
+    .eq("unit", unit)
     .eq("id", id)
     .select()
     .single();
@@ -32,9 +36,11 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const { id } = params;
+  const { unit, id } = params;
+  if (!getUnit(unit)) return NextResponse.json({ error: "Unknown unit" }, { status: 404 });
+
   const supabase = getSupabaseServerClient();
-  const { error } = await supabase.from("quotes").delete().eq("id", id);
+  const { error } = await supabase.from("quotes").delete().eq("unit", unit).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return new NextResponse(null, { status: 204 });
 }

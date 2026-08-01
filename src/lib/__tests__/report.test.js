@@ -2,11 +2,14 @@ import { describe, it, expect } from "vitest";
 import * as XLSX from "xlsx";
 import { cleanSheetName, detailRows, summarize, summaryRow, buildWorkbook } from "../report.js";
 import { fmtDate } from "../format.js";
+import { getUnit } from "../units.js";
+
+const RISK_CLASSES = getUnit("commercial-property").riskClasses;
 
 const QUOTES = [
-  { id: "a", insured: "Alpha Mills", broker: "Crownfield", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "Bound", createdAt: "2026-01-05T10:00:00.000Z" },
-  { id: "b", insured: "Beta Hotels", broker: "", riskClass: "IAR", month: "Mar", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "", createdAt: "2026-03-10T10:00:00.000Z" },
-  { id: "c", insured: "Gamma Works", broker: "Meridian", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "Paid", createdAt: "2025-03-15T10:00:00.000Z" },
+  { id: "a", insured: "Alpha Mills", broker: "Crownfield", officer: "Ada Okafor", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "Bound", createdAt: "2026-01-05T10:00:00.000Z" },
+  { id: "b", insured: "Beta Hotels", broker: "", officer: "Ben Musa", riskClass: "IAR", month: "Mar", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "", createdAt: "2026-03-10T10:00:00.000Z" },
+  { id: "c", insured: "Gamma Works", broker: "Meridian", officer: "Ada Okafor", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "Paid", createdAt: "2025-03-15T10:00:00.000Z" },
 ];
 
 describe("cleanSheetName", () => {
@@ -29,6 +32,7 @@ describe("detailRows", () => {
     expect(row).toEqual({
       "Insured / Risk": "Alpha Mills",
       "Broker / Source": "Crownfield",
+      Officer: "Ada Okafor",
       "Risk Class": "Fire only",
       Month: "Jan",
       Year: 2026,
@@ -71,13 +75,24 @@ describe("summarize / summaryRow", () => {
 });
 
 describe("buildWorkbook", () => {
-  const wb = buildWorkbook(QUOTES);
+  const wb = buildWorkbook(QUOTES, RISK_CLASSES);
 
   it("always includes the register-wide and summary sheets", () => {
     expect(wb.SheetNames).toContain("All Risks");
+    expect(wb.SheetNames).toContain("Summary by Officer");
     expect(wb.SheetNames).toContain("Summary by Class");
     expect(wb.SheetNames).toContain("Summary by Month");
     expect(wb.SheetNames).toContain("Summary by Year");
+  });
+
+  it("summary by officer lists each officer with their totals", () => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets["Summary by Officer"]);
+    const ada = rows.find((r) => r.Officer === "Ada Okafor");
+    expect(ada["No. of Quotes"]).toBe(2);
+    expect(ada["Total Premium (₦)"]).toBe(40);
+    const total = rows[rows.length - 1];
+    expect(total.Officer).toBe("TOTAL");
+    expect(total["No. of Quotes"]).toBe(3);
   });
 
   it("adds a full-detail sheet per risk class with records only", () => {

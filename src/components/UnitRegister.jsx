@@ -2,18 +2,19 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
-import { C, RISK_CLASSES, MONTHS, CURRENT_YEAR, makeBlankForm } from "../lib/constants.js";
+import { C, MONTHS, CURRENT_YEAR, CATEGORICAL_COLORS, OTHER_COLOR, makeBlankForm } from "../lib/constants.js";
 import { fmtN, fmtCompact, fmtDate } from "../lib/format.js";
 import {
-  filterQuotes, computeTotals, conversionRate, monthlyChartData,
+  filterQuotes, computeTotals, conversionRate, monthlyChartData, riskClassChartData, officerActivity,
   validateQuote, normalizeQuote,
 } from "../lib/quotes.js";
 import { exportWorkbook } from "../lib/report.js";
-import { quotesApi } from "../lib/quotesApi.js";
+import { makeQuotesApi } from "../lib/quotesApi.js";
 
 /* ------------------------------------------------------------------ */
 /*  Small components                                                   */
@@ -117,9 +118,11 @@ function RowActions({ onEdit, onDelete }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Main app                                                           */
+/*  Unit register - one underwriting unit's quotation & risk register  */
 /* ------------------------------------------------------------------ */
-export default function App() {
+export default function UnitRegister({ unit }) {
+  const api = useMemo(() => makeQuotesApi(unit.slug), [unit.slug]);
+
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
@@ -127,12 +130,13 @@ export default function App() {
   const [filterClass, setFilterClass] = useState("All");
   const [filterMonth, setFilterMonth] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [filterOfficer, setFilterOfficer] = useState("All");
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formCreatedAt, setFormCreatedAt] = useState(null);
-  const [form, setForm] = useState(makeBlankForm());
+  const [form, setForm] = useState(() => makeBlankForm(unit.riskClasses));
   const [formError, setFormError] = useState("");
 
   const [commentEditId, setCommentEditId] = useState(null);
@@ -143,7 +147,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const rows = await quotesApi.list();
+        const rows = await api.list();
         setQuotes(rows);
       } catch {
         // Register couldn't be loaded - start with an empty view rather than crash
@@ -152,23 +156,23 @@ export default function App() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [api]);
 
   /* ---------- resync on failure ---------- */
   const resync = async () => {
     try {
-      setQuotes(await quotesApi.list());
+      setQuotes(await api.list());
     } catch {
       // leave the current (possibly stale) view in place
     }
   };
 
   /* ---------- actions ---------- */
-  const openAdd = () => { setForm(makeBlankForm()); setEditingId(null); setFormCreatedAt(null); setFormError(""); setShowForm(true); };
+  const openAdd = () => { setForm(makeBlankForm(unit.riskClasses)); setEditingId(null); setFormCreatedAt(null); setFormError(""); setShowForm(true); };
 
   const openEdit = (q) => {
     setForm({
-      insured: q.insured, broker: q.broker || "", riskClass: q.riskClass,
+      insured: q.insured, broker: q.broker || "", officer: q.officer || "", riskClass: q.riskClass,
       month: q.month, year: String(q.year || CURRENT_YEAR),
       sumInsured: String(q.sumInsured), premium: String(q.premium),
       status: q.status, roComment: q.roComment || "",
@@ -183,10 +187,10 @@ export default function App() {
 
     try {
       if (editingId) {
-        const updated = await quotesApi.update(editingId, record);
+        const updated = await api.update(editingId, record);
         setQuotes((prev) => prev.map((q) => (q.id === editingId ? updated : q)));
       } else {
-        const created = await quotesApi.create(record);
+        const created = await api.create(record);
         setQuotes((prev) => [created, ...prev]);
       }
       setSaveError(false);
@@ -203,7 +207,7 @@ export default function App() {
     const nextStatus = target.status === "Incepted" ? "Pending" : "Incepted";
     setQuotes((prev) => prev.map((q) => (q.id === id ? { ...q, status: nextStatus } : q)));
     try {
-      const updated = await quotesApi.update(id, { status: nextStatus });
+      const updated = await api.update(id, { status: nextStatus });
       setQuotes((prev) => prev.map((q) => (q.id === id ? updated : q)));
       setSaveError(false);
     } catch {
@@ -216,7 +220,7 @@ export default function App() {
     const prevQuotes = quotes;
     setQuotes((prev) => prev.filter((q) => q.id !== id));
     try {
-      await quotesApi.remove(id);
+      await api.remove(id);
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -229,7 +233,7 @@ export default function App() {
     setCommentEditId(null);
     setQuotes((prev) => prev.map((q) => (q.id === id ? { ...q, roComment } : q)));
     try {
-      const updated = await quotesApi.update(id, { roComment });
+      const updated = await api.update(id, { roComment });
       setQuotes((prev) => prev.map((q) => (q.id === id ? updated : q)));
       setSaveError(false);
     } catch {
@@ -243,7 +247,7 @@ export default function App() {
     const prevQuotes = quotes;
     setQuotes([]);
     try {
-      await quotesApi.clearAll();
+      await api.clearAll();
       setSaveError(false);
     } catch {
       setSaveError(true);
@@ -253,9 +257,21 @@ export default function App() {
 
   /* ---------- derived ---------- */
   const filtered = useMemo(
-    () => filterQuotes(quotes, { riskClass: filterClass, month: filterMonth, status: filterStatus, search }),
-    [quotes, filterClass, filterMonth, filterStatus, search]
+    () => filterQuotes(quotes, { riskClass: filterClass, month: filterMonth, status: filterStatus, officer: filterOfficer, search }),
+    [quotes, filterClass, filterMonth, filterStatus, filterOfficer, search]
   );
+
+  // Full (unfiltered) distinct officer list drives both the filter dropdown
+  // and each officer's fixed color slot, so a color always means the same
+  // person regardless of which filters are active.
+  const officers = useMemo(
+    () => [...new Set(quotes.map((q) => q.officer).filter(Boolean))].sort(),
+    [quotes]
+  );
+  const officerColor = (name) => {
+    const idx = officers.indexOf(name);
+    return idx >= 0 && idx < CATEGORICAL_COLORS.length ? CATEGORICAL_COLORS[idx] : OTHER_COLOR;
+  };
 
   const totals = useMemo(() => computeTotals(filtered), [filtered]);
   const convRate = conversionRate(filtered);
@@ -275,8 +291,20 @@ export default function App() {
   ];
 
   const monthlyData = useMemo(() => monthlyChartData(filtered), [filtered]);
+  const riskClassData = useMemo(() => riskClassChartData(filtered, unit.riskClasses), [filtered, unit.riskClasses]);
 
-  const activeFilters = filterClass !== "All" || filterMonth !== "All" || filterStatus !== "All" || search;
+  // Cap individually-shown officers at the palette size; fold the rest into
+  // a single gray "Other" slice rather than generating more hues.
+  const officerChartData = useMemo(() => {
+    const activity = officerActivity(filtered);
+    const shown = activity.slice(0, CATEGORICAL_COLORS.length);
+    const restTotal = activity.slice(CATEGORICAL_COLORS.length).reduce((a, r) => a + r.count, 0);
+    const data = shown.map((r) => ({ name: r.officer, value: r.count, color: officerColor(r.officer) }));
+    if (restTotal > 0) data.push({ name: "Other", value: restTotal, color: OTHER_COLOR });
+    return data;
+  }, [filtered, officers]);
+
+  const activeFilters = filterClass !== "All" || filterMonth !== "All" || filterStatus !== "All" || filterOfficer !== "All" || search;
 
   /* ---------- render ---------- */
   if (loading) {
@@ -295,11 +323,13 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Image src="/leadway-emblem.png" alt="Leadway Assurance" width={51} height={44} priority />
             <div>
-              <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#8FA3C4" }}>
-                Commercial Property Risk Unit
+              <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold uppercase tracking-widest" style={{ color: "#8FA3C4" }}>
+                <Link href="/" className="hover:underline hover:text-white">General Business Underwriting Department</Link>
+                <span>·</span>
+                <span>Quotation &amp; Risk Register</span>
               </div>
               <h1 className="text-white text-2xl md:text-3xl" style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}>
-                Quotation &amp; Risk Register
+                {unit.name}
               </h1>
             </div>
           </div>
@@ -311,7 +341,7 @@ export default function App() {
             )}
             {quotes.length > 0 && (
               <button
-                onClick={() => exportWorkbook(quotes)}
+                onClick={() => exportWorkbook(quotes, unit)}
                 className="px-4 py-2 rounded-lg text-sm font-semibold transition-transform hover:scale-105"
                 style={{ background: "transparent", color: "#FFFFFF", border: "1px solid #4C5F80" }}
                 title="Download the full register as an Excel workbook"
@@ -340,7 +370,7 @@ export default function App() {
             <Field label="Risk class">
               <select aria-label="Risk class filter" value={filterClass} onChange={(e) => setFilterClass(e.target.value)} style={inputStyle}>
                 <option>All</option>
-                {RISK_CLASSES.map((r) => <option key={r}>{r}</option>)}
+                {unit.riskClasses.map((r) => <option key={r}>{r}</option>)}
               </select>
             </Field>
           </div>
@@ -361,6 +391,14 @@ export default function App() {
               </select>
             </Field>
           </div>
+          <div className="w-full sm:w-[180px]">
+            <Field label="Officer">
+              <select aria-label="Officer filter" value={filterOfficer} onChange={(e) => setFilterOfficer(e.target.value)} style={inputStyle}>
+                <option>All</option>
+                {officers.map((o) => <option key={o}>{o}</option>)}
+              </select>
+            </Field>
+          </div>
           <div className="w-full sm:w-[200px]">
             <Field label="Search insured / broker">
               <input
@@ -371,7 +409,7 @@ export default function App() {
           </div>
           {activeFilters && (
             <button
-              onClick={() => { setFilterClass("All"); setFilterMonth("All"); setFilterStatus("All"); setSearch(""); }}
+              onClick={() => { setFilterClass("All"); setFilterMonth("All"); setFilterStatus("All"); setFilterOfficer("All"); setSearch(""); }}
               className="sm:ml-auto text-sm font-semibold underline"
               style={{ color: C.inkSoft }}
             >
@@ -466,6 +504,69 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {/* Bar: premium by risk class */}
+            <div className="lg:col-span-2 rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+              <h2 className="text-sm font-semibold" style={{ color: C.ink }}>Premium by risk class</h2>
+              <p className="text-xs mt-0.5" style={{ color: C.inkSoft }}>Stacked by conversion status, across every risk class this unit offers</p>
+              <div style={{ height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={riskClassData} margin={{ top: 12, right: 8, left: 0, bottom: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.line} vertical={false} />
+                    <XAxis
+                      dataKey="riskClass"
+                      tick={{ fontSize: 10, fill: C.inkSoft }}
+                      axisLine={{ stroke: C.line }}
+                      tickLine={false}
+                      angle={-35}
+                      textAnchor="end"
+                      interval={0}
+                      height={80}
+                    />
+                    <YAxis tickFormatter={fmtCompact} tick={{ fontSize: 11, fill: C.inkSoft }} axisLine={false} tickLine={false} width={64} />
+                    <Tooltip formatter={(v) => fmtN(v)} cursor={{ fill: C.navyChip }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Incepted" stackId="a" fill={C.teal} radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="Pending" stackId="a" fill={C.amber} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Pie: officer activity */}
+            {officerChartData.length > 0 && (
+              <div className="lg:col-span-2 rounded-xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+                <h2 className="text-sm font-semibold" style={{ color: C.ink }}>Officer activity</h2>
+                <p className="text-xs mt-0.5" style={{ color: C.inkSoft }}>Quotes logged per officer in the current view</p>
+                <div style={{ height: 260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={officerChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={54}
+                        outerRadius={88}
+                        paddingAngle={2}
+                        strokeWidth={0}
+                        label={officerChartData.length <= 4 ? ({ percent }) => `${Math.round(percent * 100)}%` : undefined}
+                      >
+                        {officerChartData.map((d) => <Cell key={d.name} fill={d.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v, n) => [`${v} quote${v === 1 ? "" : "s"}`, n]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs font-medium">
+                  {officerChartData.map((d) => (
+                    <span key={d.name} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: d.color }} />
+                      {d.name} ({d.value})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -500,6 +601,7 @@ export default function App() {
                       <div className="min-w-0">
                         <div className="font-semibold truncate">{q.insured}</div>
                         {q.broker && <div className="text-xs truncate" style={{ color: C.inkSoft }}>{q.broker}</div>}
+                        <div className="text-xs truncate" style={{ color: C.inkSoft }}>Officer: {q.officer || "Unassigned"}</div>
                       </div>
                       <StatusChip status={q.status} onClick={() => toggleStatus(q.id)} />
                     </div>
@@ -542,10 +644,11 @@ export default function App() {
 
               {/* Desktop/tablet: full table (sm and up) */}
               <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full text-sm" style={{ minWidth: 980 }}>
+                <table className="w-full text-sm" style={{ minWidth: 1080 }}>
                   <thead>
                     <tr className="text-left text-xs uppercase tracking-wider" style={{ color: C.inkSoft, background: "#F7F9FC" }}>
                       <th className="px-4 py-3 font-semibold">Insured / Risk</th>
+                      <th className="px-4 py-3 font-semibold">Officer</th>
                       <th className="px-4 py-3 font-semibold">Risk class</th>
                       <th className="px-4 py-3 font-semibold">Month</th>
                       <th className="px-4 py-3 font-semibold whitespace-nowrap">Date logged</th>
@@ -563,6 +666,7 @@ export default function App() {
                           <div className="font-semibold">{q.insured}</div>
                           {q.broker && <div className="text-xs" style={{ color: C.inkSoft }}>{q.broker}</div>}
                         </td>
+                        <td className="px-4 py-3">{q.officer || "Unassigned"}</td>
                         <td className="px-4 py-3">
                           <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: C.navyChip, color: C.ink }}>
                             {q.riskClass}
@@ -645,9 +749,14 @@ export default function App() {
                   <input style={inputStyle} value={form.broker} onChange={(e) => setForm({ ...form, broker: e.target.value })} placeholder="e.g. Crownfield Brokers, or Direct" />
                 </Field>
               </div>
+              <div className="md:col-span-2">
+                <Field label="Officer in charge *">
+                  <input style={inputStyle} value={form.officer} onChange={(e) => setForm({ ...form, officer: e.target.value })} placeholder="e.g. Ada Okafor" />
+                </Field>
+              </div>
               <Field label="Risk class *">
                 <select style={inputStyle} value={form.riskClass} onChange={(e) => setForm({ ...form, riskClass: e.target.value })}>
-                  {RISK_CLASSES.map((r) => <option key={r}>{r}</option>)}
+                  {unit.riskClasses.map((r) => <option key={r}>{r}</option>)}
                 </select>
               </Field>
               <Field label="Quote month *">

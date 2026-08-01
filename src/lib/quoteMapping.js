@@ -6,6 +6,7 @@
 const FIELD_MAP = {
   insured: "insured",
   broker: "broker",
+  officer: "officer",
   riskClass: "risk_class",
   month: "month",
   year: "year",
@@ -21,6 +22,7 @@ export function rowToQuote(row) {
     id: row.id,
     insured: row.insured,
     broker: row.broker || "",
+    officer: row.officer || "",
     riskClass: row.risk_class,
     month: row.month,
     year: Number(row.year),

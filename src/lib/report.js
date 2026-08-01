@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { RISK_CLASSES, MONTHS, CURRENT_YEAR } from "./constants.js";
+import { MONTHS, CURRENT_YEAR } from "./constants.js";
 import { fmtDate } from "./format.js";
 
 /** Excel sheet names: max 31 chars, no \ / ? * [ ] : characters. */
@@ -11,6 +11,7 @@ export const detailRows = (rows) =>
   rows.map((q) => ({
     "Insured / Risk": q.insured,
     "Broker / Source": q.broker || "",
+    Officer: q.officer || "",
     "Risk Class": q.riskClass,
     Month: q.month,
     Year: q.year || CURRENT_YEAR,
@@ -49,7 +50,7 @@ export const summaryRow = (label, labelKey, rows) => {
   };
 };
 
-const DETAIL_WIDTHS = [30, 24, 24, 8, 8, 14, 18, 16, 18, 45];
+const DETAIL_WIDTHS = [30, 24, 20, 24, 8, 8, 14, 18, 16, 18, 45];
 const SUMMARY_WIDTHS = [26, 14, 22, 20, 10, 10, 22, 20];
 
 const addSheet = (wb, name, rows, widths) => {
@@ -63,18 +64,31 @@ const addSheet = (wb, name, rows, widths) => {
  *  - "All Risks" full detail
  *  - Summary by Class / Month / Year
  *  - Full-detail sheet per risk class, per month, per year (non-empty only)
+ * `riskClasses` is the owning unit's risk class list (each unit offers a
+ * different set), used to drive the per-class summary and detail sheets.
  */
-export function buildWorkbook(quotes) {
+export function buildWorkbook(quotes, riskClasses) {
   const wb = XLSX.utils.book_new();
   const years = [...new Set(quotes.map((q) => q.year || CURRENT_YEAR))].sort();
+  const officers = [...new Set(quotes.map((q) => q.officer).filter(Boolean))].sort();
 
   addSheet(wb, "All Risks", detailRows(quotes), DETAIL_WIDTHS);
 
   addSheet(
     wb,
+    "Summary by Officer",
+    [
+      ...officers.map((o) => summaryRow(o, "Officer", quotes.filter((q) => q.officer === o))),
+      summaryRow("TOTAL", "Officer", quotes),
+    ],
+    SUMMARY_WIDTHS
+  );
+
+  addSheet(
+    wb,
     "Summary by Class",
     [
-      ...RISK_CLASSES.map((rc) =>
+      ...riskClasses.map((rc) =>
         summaryRow(rc, "Risk Class", quotes.filter((q) => q.riskClass === rc))
       ),
       summaryRow("TOTAL", "Risk Class", quotes),
@@ -104,7 +118,7 @@ export function buildWorkbook(quotes) {
     SUMMARY_WIDTHS
   );
 
-  RISK_CLASSES.forEach((rc) => {
+  riskClasses.forEach((rc) => {
     const rows = quotes.filter((q) => q.riskClass === rc);
     if (rows.length) addSheet(wb, rc, detailRows(rows), DETAIL_WIDTHS);
   });
@@ -122,10 +136,11 @@ export function buildWorkbook(quotes) {
   return wb;
 }
 
-/** Build and trigger the browser download. */
-export function exportWorkbook(quotes) {
+/** Build and trigger the browser download. `unit` ({ name, riskClasses }) drives the per-class sheets and filename prefix. */
+export function exportWorkbook(quotes, unit) {
   if (!quotes.length) return;
-  const wb = buildWorkbook(quotes);
+  const wb = buildWorkbook(quotes, unit?.riskClasses || []);
   const stamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `Risk_Quotation_Report_${stamp}.xlsx`);
+  const prefix = unit?.name ? `${unit.name.replace(/[^a-zA-Z0-9]+/g, "_")}_` : "";
+  XLSX.writeFile(wb, `${prefix}Risk_Quotation_Report_${stamp}.xlsx`);
 }

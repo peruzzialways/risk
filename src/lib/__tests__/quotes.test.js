@@ -4,15 +4,17 @@ import {
   computeTotals,
   conversionRate,
   monthlyChartData,
+  riskClassChartData,
+  officerActivity,
   validateQuote,
   normalizeQuote,
 } from "../quotes.js";
 
 const QUOTES = [
-  { id: "a", insured: "Alpha Mills", broker: "Crownfield", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "" },
-  { id: "b", insured: "Beta Hotels", broker: "Direct", riskClass: "IAR", month: "Jan", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "" },
-  { id: "c", insured: "Gamma Works", broker: "Meridian", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "" },
-  { id: "d", insured: "Delta Foods", broker: "Crownfield", riskClass: "Fire only", month: "Mar", year: 2026, sumInsured: 400, premium: 40, status: "Pending", roComment: "" },
+  { id: "a", insured: "Alpha Mills", broker: "Crownfield", officer: "Ada Okafor", riskClass: "Fire only", month: "Jan", year: 2026, sumInsured: 100, premium: 10, status: "Incepted", roComment: "" },
+  { id: "b", insured: "Beta Hotels", broker: "Direct", officer: "Ben Musa", riskClass: "IAR", month: "Jan", year: 2026, sumInsured: 200, premium: 20, status: "Pending", roComment: "" },
+  { id: "c", insured: "Gamma Works", broker: "Meridian", officer: "Ada Okafor", riskClass: "CAR", month: "Mar", year: 2025, sumInsured: 300, premium: 30, status: "Incepted", roComment: "" },
+  { id: "d", insured: "Delta Foods", broker: "Crownfield", officer: "Ben Musa", riskClass: "Fire only", month: "Mar", year: 2026, sumInsured: 400, premium: 40, status: "Pending", roComment: "" },
 ];
 
 describe("filterQuotes", () => {
@@ -31,6 +33,10 @@ describe("filterQuotes", () => {
 
   it("filters by conversion status", () => {
     expect(filterQuotes(QUOTES, { status: "Incepted" }).map((q) => q.id)).toEqual(["a", "c"]);
+  });
+
+  it("filters by officer", () => {
+    expect(filterQuotes(QUOTES, { officer: "Ada Okafor" }).map((q) => q.id)).toEqual(["a", "c"]);
   });
 
   it("searches insured and broker case-insensitively", () => {
@@ -95,9 +101,47 @@ describe("monthlyChartData", () => {
   });
 });
 
+describe("riskClassChartData", () => {
+  const riskClasses = ["Fire only", "IAR", "CAR", "Boiler"];
+
+  it("returns one row per risk class given, in that order", () => {
+    const rows = riskClassChartData(QUOTES, riskClasses);
+    expect(rows.map((r) => r.riskClass)).toEqual(riskClasses);
+  });
+
+  it("splits premium by conversion status per class", () => {
+    const rows = riskClassChartData(QUOTES, riskClasses);
+    expect(rows.find((r) => r.riskClass === "Fire only")).toMatchObject({ Incepted: 10, Pending: 40 });
+    expect(rows.find((r) => r.riskClass === "CAR")).toMatchObject({ Incepted: 30, Pending: 0 });
+  });
+
+  it("returns zeros for a class with no activity", () => {
+    const rows = riskClassChartData(QUOTES, riskClasses);
+    expect(rows.find((r) => r.riskClass === "Boiler")).toMatchObject({ Incepted: 0, Pending: 0 });
+  });
+});
+
+describe("officerActivity", () => {
+  it("counts quotes per officer, busiest first", () => {
+    expect(officerActivity(QUOTES)).toEqual([
+      { officer: "Ada Okafor", count: 2 },
+      { officer: "Ben Musa", count: 2 },
+    ]);
+  });
+
+  it("buckets quotes with no officer as Unassigned", () => {
+    const rows = [...QUOTES, { id: "e", insured: "Epsilon", officer: "", riskClass: "CAR", month: "Jan", year: 2026, sumInsured: 1, premium: 1, status: "Pending", roComment: "" }];
+    expect(officerActivity(rows).find((r) => r.officer === "Unassigned")).toEqual({ officer: "Unassigned", count: 1 });
+  });
+
+  it("returns an empty list for an empty register", () => {
+    expect(officerActivity([])).toEqual([]);
+  });
+});
+
 describe("validateQuote", () => {
   const valid = {
-    insured: "Alpha Mills", broker: "", riskClass: "Fire only",
+    insured: "Alpha Mills", broker: "", officer: "Ada Okafor", riskClass: "Fire only",
     month: "Jan", year: "2026", sumInsured: "100", premium: "10",
     status: "Pending", roComment: "",
   };
@@ -108,6 +152,11 @@ describe("validateQuote", () => {
 
   it("rejects missing insured name", () => {
     expect(validateQuote({ ...valid, insured: "  " })).toMatch(/insured/i);
+  });
+
+  it("rejects missing officer", () => {
+    expect(validateQuote({ ...valid, officer: "" })).toMatch(/officer/i);
+    expect(validateQuote({ ...valid, officer: "   " })).toMatch(/officer/i);
   });
 
   it("rejects invalid sum insured", () => {
@@ -134,12 +183,12 @@ describe("validateQuote", () => {
 describe("normalizeQuote", () => {
   it("trims strings and coerces numbers", () => {
     const record = normalizeQuote({
-      insured: "  Alpha Mills  ", broker: " Crownfield ", riskClass: "CAR",
+      insured: "  Alpha Mills  ", broker: " Crownfield ", officer: " Ada Okafor ", riskClass: "CAR",
       month: "Mar", year: "2026", sumInsured: "300", premium: "30",
       status: "Incepted", roComment: "  bound  ",
     });
     expect(record).toEqual({
-      insured: "Alpha Mills", broker: "Crownfield", riskClass: "CAR",
+      insured: "Alpha Mills", broker: "Crownfield", officer: "Ada Okafor", riskClass: "CAR",
       month: "Mar", year: 2026, sumInsured: 300, premium: 30,
       status: "Incepted", roComment: "bound",
     });
